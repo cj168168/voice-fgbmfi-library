@@ -10,17 +10,38 @@ export default function AdminPanel() {
   const [message, setMessage] = useState("");
   const load = async () => { const response = await fetch("/api/editions", { cache: "no-store" }); const data = await response.json() as { editions?: Edition[] }; setEditions(data.editions || []); };
   useEffect(() => {
-    fetch("/api/editions", { cache: "no-store" }).then((response) => response.json()).then((data: { editions?: Edition[] }) => setEditions(data.editions || []));
+    fetch("/api/editions", { cache: "no-store" }).then((response) => response.json()).then((data: { editions?: Edition[] }) => setEditions(data.editions || [])).catch(() => setMessage("Daftar edisi gagal dimuat."));
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setMessage("Mengunggah PDF dan cover...");
+    event.preventDefault();
+    setBusy(true);
+    setMessage("Mengunggah PDF dan cover... jangan tutup halaman.");
     const form = event.currentTarget;
-    const response = await fetch("/api/editions", { method: "POST", body: new FormData(form) });
-    const data = await response.json() as { error?: string };
-    if (!response.ok) setMessage(data.error || "Upload gagal.");
-    else { setMessage("Edisi berhasil diterbitkan ke rak."); form.reset(); await load(); }
-    setBusy(false);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 120000);
+    try {
+      const response = await fetch("/api/editions", { method: "POST", body: new FormData(form), signal: controller.signal });
+      const raw = await response.text();
+      let data: { error?: string } = {};
+      try { data = raw ? JSON.parse(raw) as { error?: string } : {}; } catch { data = {}; }
+      if (!response.ok) {
+        setMessage(data.error || `Upload gagal — server HTTP ${response.status}. Kirim kode ini ke pengelola.`);
+      } else {
+        setMessage("Edisi berhasil diterbitkan ke rak.");
+        form.reset();
+        await load();
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setMessage("Upload dihentikan karena server tidak merespons dalam 2 menit. Coba lagi setelah konfigurasi diperiksa.");
+      } else {
+        setMessage(`Upload gagal tersambung ke server: ${error instanceof Error ? error.message : "kesalahan jaringan"}.`);
+      }
+    } finally {
+      window.clearTimeout(timeout);
+      setBusy(false);
+    }
   }
 
   async function remove(edition: Edition) {
