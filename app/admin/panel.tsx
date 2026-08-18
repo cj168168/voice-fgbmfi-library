@@ -4,6 +4,16 @@ import { FormEvent, useEffect, useState } from "react";
 
 type Edition = { id: string; editionNumber: string; title: string; year: number; pdfSize: number };
 
+async function responseError(response: Response, fallback: string): Promise<string> {
+  const raw = await response.text();
+  try {
+    const data = raw ? JSON.parse(raw) as { error?: string } : {};
+    return data.error || fallback;
+  } catch {
+    return `${fallback} (HTTP ${response.status})`;
+  }
+}
+
 export default function AdminPanel() {
   const [editions, setEditions] = useState<Edition[]>([]);
   const [busy, setBusy] = useState(false);
@@ -15,29 +25,51 @@ export default function AdminPanel() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
-    setMessage("Mengunggah PDF dan cover... jangan tutup halaman.");
     const form = event.currentTarget;
+    const values = new FormData(form);
+    const pdf = values.get("pdf");
+    const cover = values.get("cover");
+    if (!(pdf instanceof File) || !(cover instanceof File)) return;
+
+    setBusy(true);
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 120000);
+    const timeout = window.setTimeout(() => controller.abort(), 10 * 60 * 1000);
+    const id = crypto.randomUUID();
+
     try {
-      const response = await fetch("/api/editions", { method: "POST", body: new FormData(form), signal: controller.signal });
-      const raw = await response.text();
-      let data: { error?: string } = {};
-      try { data = raw ? JSON.parse(raw) as { error?: string } : {}; } catch { data = {}; }
-      if (!response.ok) {
-        setMessage(data.error || `Upload gagal — server HTTP ${response.status}. Kirim kode ini ke pengelola.`);
-      } else {
-        setMessage("Edisi berhasil diterbitkan ke rak.");
-        form.reset();
-        await load();
-      }
+      setMessage(`Mengunggah PDF ${(pdf.size / 1024 / 1024).toFixed(1)} MB langsung ke R2...`);
+      const pdfResponse = await fetch(`/api/uploads/${id}/pdf`, {
+        method: "PUT",
+        headers: { "content-type": "application/pdf", "content-length": String(pdf.size) },
+        body: pdf,
+        signal: controller.signal,
+      });
+      if (!pdfResponse.ok) throw new Error(await responseError(pdfResponse, "Upload PDF gagal"));
+
+      setMessage("PDF tersimpan. Mengunggah cover...");
+      const coverResponse = await fetch(`/api/uploads/${id}/cover`, {
+        method: "PUT",
+        headers: { "content-type": cover.type || "image/jpeg", "content-length": String(cover.size) },
+        body: cover,
+        signal: controller.signal,
+      });
+      if (!coverResponse.ok) throw new Error(await responseError(coverResponse, "Upload cover gagal"));
+
+      setMessage("File tersimpan. Menerbitkan edisi ke rak...");
+      const publishResponse = await fetch("/api/editions", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, editionNumber: values.get("editionNumber"), title: values.get("title"), year: values.get("year") }),
+        signal: controller.signal,
+      });
+      if (!publishResponse.ok) throw new Error(await responseError(publishResponse, "Penerbitan edisi gagal"));
+
+      setMessage("Edisi berhasil diterbitkan ke rak.");
+      form.reset();
+      await load();
     } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        setMessage("Upload dihentikan karena server tidak merespons dalam 2 menit. Coba lagi setelah konfigurasi diperiksa.");
-      } else {
-        setMessage(`Upload gagal tersambung ke server: ${error instanceof Error ? error.message : "kesalahan jaringan"}.`);
-      }
+      if (error instanceof DOMException && error.name === "AbortError") setMessage("Upload dihentikan setelah 10 menit tanpa respons.");
+      else setMessage(error instanceof Error ? error.message : "Upload gagal tersambung ke server.");
     } finally {
       window.clearTimeout(timeout);
       setBusy(false);
@@ -51,7 +83,7 @@ export default function AdminPanel() {
   }
 
   return <div className="admin-wrap">
-    <section className="admin-intro"><p className="eyebrow">PANEL PENGELOLA</p><h1>Terbitkan edisi baru</h1><p>Upload PDF dan gambar cover. Setelah selesai, edisi otomatis muncul di rak publik.</p></section>
+    <section className="admin-intro"><p className="eyebrow">PANEL PENGELOLA</p><h1>Terbitkan edisi baru</h1><p>PDF dan cover dikirim langsung ke penyimpanan R2, kemudian edisi otomatis muncul di rak publik.</p></section>
     <div className="admin-grid">
       <form className="upload-card" onSubmit={submit}>
         <h2>Informasi edisi</h2>
