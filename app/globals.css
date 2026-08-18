@@ -11,3 +11,41 @@
 .pdf-canvas-frame{height:100%;display:grid;place-items:center;transform-style:preserve-3d}.pdf-canvas-frame canvas{display:block;max-width:100%;max-height:100%;box-shadow:0 16px 40px #000d;background:white}.pdf-loading{color:#dcb65f;letter-spacing:2px;font-size:12px;text-transform:uppercase}
 .admin-page{min-height:100vh;background:#07131d;color:#f7f3e9}.admin-header{height:76px;padding:0 5vw;border-bottom:1px solid #ffffff18;display:flex;justify-content:space-between;align-items:center;background:#0b1e29}.admin-brand{font:25px Georgia,serif;letter-spacing:4px;color:#e1b95d;text-decoration:none}.admin-brand span{font:10px Arial,sans-serif;letter-spacing:2px;color:#94a4ad;border:1px solid #ffffff29;padding:5px 8px;margin-left:10px}.admin-header>div{display:flex;align-items:center;gap:20px;font-size:12px;color:#96a6ae}.admin-header a{color:#e0b75c}.admin-wrap{max-width:1180px;margin:auto;padding:70px 30px 100px}.admin-intro h1{font:48px Georgia,serif;margin:0}.admin-intro>p:last-child{color:#9fadb5;font-size:16px}.admin-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:30px;margin-top:42px}.upload-card,.edition-manager{background:#0d2330;border:1px solid #ffffff16;border-radius:8px;padding:30px;box-shadow:0 20px 60px #0004}.upload-card h2,.edition-manager h2{font:25px Georgia,serif;margin:0 0 25px}.upload-card label{display:flex;flex-direction:column;gap:8px;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#bdc7cc;margin-bottom:19px}.upload-card input{border:1px solid #ffffff1f;background:#071823;color:white;border-radius:5px;padding:13px 14px;outline:none}.upload-card input:focus{border-color:#d5aa4a}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}.file-field{border:1px dashed #d6ad5366;padding:17px;border-radius:6px;background:#ffffff05}.file-field input{border:0;padding:4px 0}.file-field small{color:#748791;text-transform:none;letter-spacing:0}.publish-btn{width:100%;padding:15px;border:0;border-radius:4px;background:linear-gradient(135deg,#e7c46b,#b8862d);font-weight:800;color:#14222a;text-transform:uppercase;letter-spacing:1px}.publish-btn:disabled{opacity:.6}.admin-message{font-size:13px;color:#e3bd64;line-height:1.5}.manager-title{display:flex;align-items:center;justify-content:space-between}.manager-title span{font-size:11px;color:#8f9fa8}.manager-item{display:grid;grid-template-columns:52px 1fr auto;gap:15px;align-items:center;border-top:1px solid #ffffff12;padding:16px 0}.manager-item img{width:52px;height:72px;object-fit:cover}.manager-item div{display:flex;flex-direction:column;gap:6px}.manager-item strong{font-size:14px}.manager-item small{color:#82939c}.manager-item>span{color:#6acb8c;font-size:10px;text-transform:uppercase}.manager-item button{border:1px solid #e26b6b55;color:#f08b8b;background:#e26b6b12;border-radius:4px;padding:8px 11px;font-size:11px}.admin-denied{max-width:600px;margin:15vh auto;text-align:center;padding:30px}.admin-denied h1{font:40px Georgia,serif}.admin-denied p{color:#9aaab2}.admin-denied a{color:#e1b95d}
 @media(max-width:760px){.admin-header{padding:0 18px}.admin-header>div span{display:none}.admin-wrap{padding:48px 18px}.admin-intro h1{font-size:38px}.admin-grid{grid-template-columns:1fr}.upload-card,.edition-manager{padding:22px}.form-row{grid-template-columns:1fr}.manager-item{grid-template-columns:45px 1fr auto}.manager-item img{width:45px;height:62px}}
+
+
+/* Mobile bookshelf: swipe horizontally when the collection grows. */
+@media(max-width:760px){
+  body{overflow-x:hidden}
+  .bookcase{position:relative;overflow:hidden}
+  .shelf-row{
+    justify-content:flex-start;
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-snap-type:x mandatory;
+    scroll-padding-left:18px;
+    overscroll-behavior-inline:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    touch-action:pan-x pan-y;
+    padding-left:18px;
+    padding-right:38vw;
+  }
+  .shelf-row::-webkit-scrollbar{display:none}
+  .book-card{flex:0 0 172px;scroll-snap-align:start;scroll-snap-stop:always}
+  .coming-soon{display:flex;flex:0 0 130px;scroll-snap-align:start}
+  .bookcase:after{
+    content:"← Geser untuk melihat edisi lain →";
+    display:block;
+    padding:14px 12px 7px;
+    color:#f0d398;
+    background:#3b1d12;
+    text-align:center;
+    font-size:10px;
+    letter-spacing:1.1px;
+    text-transform:uppercase;
+  }
+}
+@media(max-width:420px){
+  .shelf-row{padding-left:18px;padding-right:42vw}
+  .coming-soon{display:flex}
+}
